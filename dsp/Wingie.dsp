@@ -81,17 +81,27 @@ r(note, index, source) = pm.modeFilter(a, b, ba.lin2LogGain(c))
   c = env_mute(button("mute_%index"));
 };
 
+// Name the ins and outs of the `process` function for use in the er-301 object
+declare er301_in1 "InL";
+declare er301_in2 "InR";
+declare er301_out1 "OutL";
+declare er301_out2 "OutR";
+
+//process = _,_
+//    : (_ <: attach(_, _ : an.amp_follower(amp_follower_decay) : _ > left_threshold : hbargraph("left_trig", 0, 1))),
+//      (_ <: attach(_, _ : an.amp_follower(amp_follower_decay) : _ > right_threshold : hbargraph("right_trig", 0, 1)))
+//        : (_ * env_mode_change * volume0), (_ * env_mode_change * volume1)
+//            <: (_ * resonator_input_gain : _ * vol_wet0 : fi.lowpass(1, 4000) <: hgroup("left", sum(i, nHarmonics, r(note0, i, mode0))) : _ * resonator_output_gain),
+//               (_ * resonator_input_gain : _ * vol_wet1 : fi.lowpass(1, 4000) <: hgroup("right", sum(i, nHarmonics, r(note1, i, mode1))) : _ * resonator_output_gain),
+//               (_ * vol_dry0),
+//               (_ * vol_dry1)
+//                    : ef.cubicnl(0.01, 0), ef.cubicnl(0.01, 0), _, _
+//                //:> co.limiter_1176_R4_mono, co.limiter_1176_R4_mono
+//                //:> aa.cubic1, aa.cubic1
+//                        :> (_ * output_gain), (_ * output_gain)
+//                            ;
+
 process = _,_
-    : fi.dcblocker, fi.dcblocker
-    : (_ <: attach(_, _ : an.amp_follower(amp_follower_decay) : _ > left_threshold : hbargraph("left_trig", 0, 1))),
-      (_ <: attach(_, _ : an.amp_follower(amp_follower_decay) : _ > right_threshold : hbargraph("right_trig", 0, 1)))
-        : (_ * env_mode_change * volume0), (_ * env_mode_change * volume1)
-            <: (_ * resonator_input_gain : _ * vol_wet0 : fi.lowpass(1, 4000) <: hgroup("left", sum(i, nHarmonics, r(note0, i, mode0))) : _ * resonator_output_gain),
-               (_ * resonator_input_gain : _ * vol_wet1 : fi.lowpass(1, 4000) <: hgroup("right", sum(i, nHarmonics, r(note1, i, mode1))) : _ * resonator_output_gain),
-               (_ * vol_dry0),
-               (_ * vol_dry1)
-                    : ef.cubicnl(0.01, 0), ef.cubicnl(0.01, 0), _, _
-                //:> co.limiter_1176_R4_mono, co.limiter_1176_R4_mono
-                //:> aa.cubic1, aa.cubic1
-                        :> (_ * output_gain), (_ * output_gain)
-                            ;
+        : (_ * resonator_input_gain : _ * vol_wet0 : fi.lowpass(1, 4000) <: hgroup("left", sum(i, nHarmonics, r(note0, i, mode0))) : _ * resonator_output_gain),
+          (_ * resonator_input_gain : _ * vol_wet1 : fi.lowpass(1, 4000) <: hgroup("right", sum(i, nHarmonics, r(note1, i, mode1))) : _ * resonator_output_gain)
+      : ef.cubicnl(0.01, 0), ef.cubicnl(0.01, 0);

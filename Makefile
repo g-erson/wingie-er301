@@ -21,7 +21,7 @@
 # rather than auto-generated.
 
 # Override these defaults on the commandline:
-PKGNAME ?= friendsofwingie 
+PKGNAME ?= friendsofwingie
 PKGVERSION ?= 0.1.0
 LIBNAME ?= libwingie
 PROFILE ?= testing
