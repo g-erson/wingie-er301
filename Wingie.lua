@@ -11,51 +11,38 @@ local Unit = require "Unit"
 local Wingie = Class {}
 Wingie:include(Unit)
 
+-- POLY_MODE 0
+-- STRING_MODE 1
+-- BAR_MODE 2
+-- CAVE_MODE 3
+
 function Wingie:init(args)
   args.title = "Wingie"
   args.mnemonic = "WG"
   Unit.init(self, args)
 end
 
+function Wingie:addParameterAdapterBranch(name, obj, defaultGain)
+  local pa = self:addObject(name, app.ParameterAdapter())
+  tie(obj, name, pa, "Out")
+  if defaultGain then
+    pa:hardSet("Gain", defaultGain)
+  end
+  return self:addMonoBranch(name, pa, "In", pa, "Out")
+end
+
 function Wingie:onLoadGraph(channelCount)
   local wingie = self:addObject("wingie", lib.Wingie())
 
-  local decay = self:addObject("Decay", app.ParameterAdapter())
-  local left_note = self:addObject("LeftNote", app.ParameterAdapter())
-  local right_note = self:addObject("RightNote", app.ParameterAdapter())
-  local left_mix = self:addObject("LeftMix", app.ParameterAdapter())
-  local right_mix = self:addObject("RightMix", app.ParameterAdapter())
-  local left_mode = self:addObject("LeftMode", app.ParameterAdapter())
-  local right_mode = self:addObject("RightMode", app.ParameterAdapter())
-  local in_gain = self:addObject("InGain", app.ParameterAdapter())
-  local out_gain = self:addObject("OutGain", app.ParameterAdapter())
-
-  tie(wingie, "Decay", decay, "Out")
-  self:addMonoBranch("decay", decay, "In", decay, "Out")
-
-  tie(wingie, "LeftMix", left_mix, "Out")
-  self:addMonoBranch("left_mix", left_mix, "In", left_mix, "Out")
-
-  tie(wingie, "RightMix", right_mix, "Out")
-  self:addMonoBranch("right_mix", right_mix, "In", right_mix, "Out")
-
-  tie(wingie, "LeftNote", left_note, "Out")
-  self:addMonoBranch("left_note", left_note, "In", left_note, "Out")
-
-  tie(wingie, "RightNote", right_note, "Out")
-  self:addMonoBranch("right_note", right_note, "In", right_note, "Out")
-
-  tie(wingie, "InGain", in_gain, "Out")
-  self:addMonoBranch("in_gain", in_gain, "In", in_gain, "Out")
-
-  tie(wingie, "OutGain", out_gain, "Out")
-  self:addMonoBranch("out_gain", out_gain, "In", out_gain, "Out")
-
-  tie(wingie, "LeftMode", left_mode, "Out")
-  self:addMonoBranch("left_mode", left_mode, "In", left_mode, "Out")
-
-  tie(wingie, "RightMode", right_mode, "Out")
-  self:addMonoBranch("right_mode", right_mode, "In", right_mode, "Out")
+  local decay = self:addParameterAdapterBranch("Decay", wingie)
+  local note = self:addParameterAdapterBranch("Note", wingie, 1)
+  local note1 = self:addParameterAdapterBranch("Note1", wingie, 1)
+  local note2 = self:addParameterAdapterBranch("Note2", wingie, 1)
+  local mix = self:addParameterAdapterBranch("Mix",wingie)
+  local freq = self:addParameterAdapterBranch("Freq",wingie)
+  local mode = self:addParameterAdapterBranch("Mode",wingie)
+  local in_gain = self:addParameterAdapterBranch("InGain",wingie)
+  local out_gain = self:addParameterAdapterBranch("OutGain",wingie)
 
   connect(wingie, "OutL", self, "Out1")
   connect(self, "In1", wingie, "InL")
@@ -70,13 +57,13 @@ end
 
 local views = {
   expanded = {
+    "freq",
+    "mode",
+    "note",
+    "note1",
+    "note2",
     "decay",
-    "left_note",
-    "right_note",
-    "left_mode",
-    "right_mode",
-    "left_mix",
-    "right_mix",
+    "mix",
     "in_gain",
     "out_gain",
   },
@@ -96,7 +83,7 @@ function Wingie:onLoadViews(objects, branches)
   controls.decay = GainBias {
     button = "Decay",
     description = "decay",
-    branch = branches.decay,
+    branch = branches.Decay,
     gainbias = objects.Decay,
     range = objects.Decay,
     biasUnits = app.unitNone,
@@ -104,72 +91,62 @@ function Wingie:onLoadViews(objects, branches)
     initialBias = 5,
   }
 
-  controls.left_mix = GainBias {
-    button = "L Mix",
-    description = "Left Mix",
-    branch = branches.left_mix,
-    gainbias = objects.LeftMix,
-    range = objects.LeftMix,
+  controls.mix = GainBias {
+    button = "Mix",
+    description = "Mix",
+    branch = branches.Mix,
+    gainbias = objects.Mix,
+    range = objects.Mix,
     biasUnits = app.unitNone,
     biasMap = Encoder.getMap("[0,1]"),
     initialBias = 1,
   }
 
-  controls.right_mix = GainBias {
-    button = "R Mix",
-    description = "Right Mix",
-    branch = branches.right_mix,
-    gainbias = objects.RightMix,
-    range = objects.RightMix,
-    biasUnits = app.unitNone,
-    biasMap = Encoder.getMap("[0,1]"),
-    initialBias = 1,
+  controls.freq = GainBias {
+    button      = "Freq",
+    description = "Freq",
+    branch      = branches.Freq,
+    gainbias    = objects.Freq,
+    range       = objects.Freq,
+    biasMap     = Encoder.getMap("oscFreq"),
+    biasUnits   = app.unitHertz,
+    initialBias = 27.5,
+    gainMap     = Encoder.getMap("freqGain"),
+    scaling     = app.octaveScaling
+  }
+  
+  controls.note = Pitch {
+    button = "V/Oct",
+    description = "V/Oct",
+    branch = branches.Note,
+    offset = objects.Note,
+    range = objects.Note
   }
 
-  controls.left_note = GainBias {
-    button = "L Pitch",
-    description = "Left Pitch",
-    branch = branches.left_note,
-    gainbias = objects.LeftNote,
-    range = objects.LeftNote,
-    biasUnits = app.unitNone,
-    biasMap = intMap(12,96),
-    biasPrecision = 0,
-    initialBias = 36,
+  controls.note1 = Pitch {
+    button = "V/Oct 1",
+    description = "V/Oct",
+    branch = branches.Note1,
+    offset = objects.Note1,
+    range = objects.Note1
   }
 
-  controls.right_note = GainBias {
-    button = "R Pitch",
-    description = "Right Pitch",
-    branch = branches.right_note,
-    gainbias = objects.RightNote,
-    range = objects.RightNote,
-    biasUnits = app.unitNone,
-    biasMap = intMap(12,96),
-    biasPrecision = 0,
-    initialBias = 36,
+  controls.note2 = Pitch {
+    button = "V/Oct 2",
+    description = "V/Oct",
+    branch = branches.Note2,
+    offset = objects.Note2,
+    range = objects.Note2
   }
 
-  controls.left_mode = GainBias {
-    button = "L Mode",
-    description = "Left Mode",
-    branch = branches.left_mode,
-    gainbias = objects.LeftMode,
-    range = objects.LeftMode,
+  controls.mode = GainBias {
+    button = "Mode",
+    description = "Mode",
+    branch = branches.Mode,
+    gainbias = objects.Mode,
+    range = objects.Mode,
     biasUnits = app.unitNone,
-    biasMap = intMap(0,4),
-    biasPrecision = 0,
-    initialBias = 0,
-  }
-
-  controls.right_mode = GainBias {
-    button = "R Mode",
-    description = "Right Mode",
-    branch = branches.right_mode,
-    gainbias = objects.RightMode,
-    range = objects.RightMode,
-    biasUnits = app.unitNone,
-    biasMap = intMap(0,4),
+    biasMap = intMap(0,3),
     biasPrecision = 0,
     initialBias = 0,
   }
@@ -177,23 +154,23 @@ function Wingie:onLoadViews(objects, branches)
   controls.in_gain = GainBias {
     button = "In Gain",
     description = "In Gain",
-    branch = branches.in_gain,
+    branch = branches.InGain,
     gainbias = objects.InGain,
     range = objects.InGain,
     biasUnits = app.unitNone,
     biasMap = Encoder.getMap("[0,1]"),
-    initialBias = 0.5,
+    initialBias = 0.1,
   }
 
   controls.out_gain = GainBias {
     button = "Out Gain",
     description = "Out Gain",
-    branch = branches.out_gain,
+    branch = branches.OutGain,
     gainbias = objects.OutGain,
     range = objects.OutGain,
     biasUnits = app.unitNone,
     biasMap = Encoder.getMap("[0,1]"),
-    initialBias = 0.5,
+    initialBias = 0.7,
   }
 
   return controls, views
