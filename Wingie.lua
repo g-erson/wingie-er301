@@ -40,7 +40,8 @@ function Wingie:onLoadGraph(channelCount)
   local note2 = self:addParameterAdapterBranch("Note2", wingie, 1)
   local mix = self:addParameterAdapterBranch("Mix",wingie)
   local freq = self:addParameterAdapterBranch("Freq",wingie)
-  local mode = self:addParameterAdapterBranch("Mode",wingie)
+  local lmode = self:addParameterAdapterBranch("LMode",wingie)
+  local rmode = self:addParameterAdapterBranch("RMode",wingie)
   local in_gain = self:addParameterAdapterBranch("InGain",wingie)
   local out_gain = self:addParameterAdapterBranch("OutGain",wingie)
 
@@ -58,7 +59,8 @@ end
 local views = {
   expanded = {
     "freq",
-    "mode",
+    "lmode",
+    "rmode",
     "note",
     "note1",
     "note2",
@@ -139,12 +141,24 @@ function Wingie:onLoadViews(objects, branches)
     range = objects.Note2
   }
 
-  controls.mode = GainBias {
-    button = "Mode",
-    description = "Mode",
-    branch = branches.Mode,
-    gainbias = objects.Mode,
-    range = objects.Mode,
+  controls.lmode = GainBias {
+    button = "L. Mode",
+    description = "L. Mode",
+    branch = branches.LMode,
+    gainbias = objects.LMode,
+    range = objects.LMode,
+    biasUnits = app.unitNone,
+    biasMap = intMap(0,3),
+    biasPrecision = 0,
+    initialBias = 0,
+  }
+
+  controls.rmode = GainBias {
+    button = "R. Mode",
+    description = "R. Mode",
+    branch = branches.RMode,
+    gainbias = objects.RMode,
+    range = objects.RMode,
     biasUnits = app.unitNone,
     biasMap = intMap(0,3),
     biasPrecision = 0,

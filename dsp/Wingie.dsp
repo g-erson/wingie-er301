@@ -31,9 +31,10 @@ left_threshold = hslider("LeftThreshold", 0.1, 0, 1, 0.01);
 right_threshold = hslider("RightThreshold", 0.1, 0, 1, 0.01);
 amp_follower_decay = 0.025;
 
-mode0 = hslider("Mode", 0, 0, 3, 1);
+mode0 = hslider("LMode", 0, 0, 3, 1);
+mode1 = hslider("RMode", 0, 0, 3, 1);
 env_mode_change_decay = hslider("env_mode_change_decay", 0.5, 0, 1, 0.01);
-env_mode_change = 1 - en.ar(0.002, env_mode_change_decay, mode0 + 1);
+env_mode_change = 1 - en.ar(0.002, env_mode_change_decay, mode0 != mode0' | mode1 != mode1');
 
 resonator_input_gain = hslider("InGain", 0.25, 0, 1, 0.01) : ba.lin2LogGain;
 resonator_output_gain = hslider("OutGain", 0.25, 0, 1, 0.01) : ba.lin2LogGain;
@@ -99,7 +100,7 @@ process = _,_
     ),
     (
       _ * resonator_input_gain : _ * vol_wet1 : fi.lowpass(1, 4000)
-      <: sum(i, nHarmonics, r(note0, note1, note2, i, mode0)) * resonator_output_gain
+      <: sum(i, nHarmonics, r(note0, note1, note2, i, mode1)) * resonator_output_gain
     ),
     _,
     _
